@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="build" basedir="." name="FileCoverage-extension">
+	<description>
+        Build the FileCoverage Extension
+    </description>
+    
+    <property name="build" location="build"/>
+    <property name="dist" location="dist"/>
+    
+    <property name="src" location="src"/>
+    <property name="name" value="filecoverage-extension" />
+    <buildnumber file="build.number"/>
+  	<property file="build.properties"/>
+
+    <target name="init">
+	    <!-- Create the time stamp -->
+	    <tstamp/>
+
+	    <delete dir="${dist}"/>
+	    <delete dir="${build}"/>
+
+	    <!-- Create the build directory structure used by compile -->
+	    <mkdir dir="${build}/"/>
+	    <mkdir dir="${build}/extension"/>
+	    
+
+
+	    <tstamp>
+	     <format property="NOW" pattern="yyyy-MM-dd HH:mm:ss" />
+	    </tstamp>
+  </target>
+
+
+   <!-- 
+  <import file="build-compile.xml"/>
+  -->
+  <target name="makeManifest" depends="init" description="create the manifest file" >
+    
+    <echo file="${build}/extension/META-INF/MANIFEST.MF">Manifest-Version: 1.0
+Built-Date: ${NOW}
+version: "${bundleversion}${build.number}"
+id: "${id}"
+name: "${label}"
+lucee-core-version: "${luceeCoreVersion}”
+release-type: ${releaseType}
+description: "${description}"
+start-bundles: false
+trial: false
+</echo>
+
+
+  </target>
+
+
+  <target name="build" depends="makeManifest"  description="generate the build" >
+ 
+    <!-- copy the logo -->
+    <copy todir="${build}/extension/META-INF">
+      <fileset dir="${src}/images">
+        <include name="logo.png"/>
+      </fileset>
+    </copy>
+
+    <copy todir="${build}/extension/applications">
+      <fileset dir="${src}/filecoverage">
+        <include name="**/*.*"/>
+      </fileset>
+    </copy>
+
+    <copy todir="${build}/extension/context">
+      <fileset dir="${src}/context">
+        <include name="**/*.*"/>
+      </fileset>
+    </copy>
+
+
+    <!-- Zip everything -->
+     <zip destfile="${dist}/${name}-${bundleversion}${build.number}.lex">
+        <zipfileset dir="${build}/extension"/>
+    </zip>
+		 
+  </target> 
+
+</project>
