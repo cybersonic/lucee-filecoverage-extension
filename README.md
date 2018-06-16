@@ -5,13 +5,19 @@ This extension provides a debugging template that logs all the calls to script f
 ## Getting Started
 
 (We are hoping this will go onto the lucee extension store in the future).
-In the meantime, you can checkout the project and run 
+
+
+Check out the installation guide. At the moment this is the main way of installing it until we get this everything ready to be added to the Lucee Extension "store". 
+
+I would love to be able to actually add this to http://forgebox.io too. 
+
+
 
 ### Prerequisites
 
 - Apache Ant to build the project (it is running a simple build.xml file)
-- Lucee 5.x and greater. 
-- Currently it is also using the H2 database extension. Which can be installed 
+- Lucee 5.x and greater. No ACF implementation yet. 
+- Currently it is also using the H2 database extension. Which can be installed fropm the Extension:Applications section of the admin.
 
 
 ### Installing
