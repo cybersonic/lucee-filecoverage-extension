@@ -1,9 +1,11 @@
 <cfcomponent extends="Debug" output="no">
 	<cfscript>
+
+		variables.tablename = "lucee_filecoverage_extension";
 		fields=array(
 			  group("Settings","Main Settings of the plugin",3)
-
 			, field("Datasource Name", "dsn","", true,"" , "text100" )
+
 			
 		);
 
@@ -22,6 +24,27 @@
 		void function onBeforeUpdate(struct custom){
 			// throwWhenNotNumeric(custom,"minimal");
 			// throwWhenNotNumeric(custom,"highlight");
+			var createDBTable = queryExecute(
+					sql:"CREATE CACHED TABLE IF NOT EXISTS PUBLIC.#variables.tablename#( 
+							ID BIGINT auto_increment, 
+							SRC VARCHAR(500), 
+							FILEPATH VARCHAR(500),
+							METHOD VARCHAR(255), 
+							COUNT INT, 
+							MIN INT,
+							MAX INT,
+							AVG INT,
+							APP INT,
+							LOAD INT,
+							QUERY INT,
+							TOTAL INT,
+							HASH VARCHAR(100)
+							)
+						",
+					options:{
+						datasource:arguments.custom.dsn
+					}
+		);
 		}
 
 		private void function throwWhenEmpty(struct custom, string name){
@@ -56,44 +79,22 @@
 
 
 		function output(custom,debugging,context){
-				queryExecute(
-					sql:"CREATE CACHED TABLE IF NOT EXISTS PUBLIC.FILEACCESS( 
-							ID BIGINT auto_increment, 
-							SRC VARCHAR(500), 
-							FUNC VARCHAR(255), 
-							COUNT INT, 
-							MIN INT,
-							MAX INT,
-							AVG INT,
-							APP INT,
-							LOAD INT,
-							QUERY INT,
-							TOTAL INT,
-							HASH VARCHAR(100)
-							)
-
-
-						",
-					options:{
-						"datasource": arguments.custom.dsn
-					}
-				);
-
-
-// Col to add
-
-			var contents = queryExecute(
-					sql:"SELECT * FROM FILEACCESS",
-					options:{
-						"datasource": arguments.custom.dsn
-					}
-				);
-	
 			
+
 			loop query="debugging.pages"{
-				queryExecute(
-						sql:"INSERT INTO FILEACCESS(SRC,COUNT,MIN,MAX,AVG,APP,LOAD,QUERY,TOTAL,HASH) VALUES(:src,:count,:min,:max,:avg,:app,:load,:query,:total,:hash)", 
-						params:{src:src,count:count,min:min,max:max,avg:avg,app:app,load:load,query:query,total:total,hash:hash(src)},
+				var filepath = ListFirst(src,"$");
+				var method = ListLast(src,"$");
+
+				method = method EQ filepath ? "" : method;
+
+				var ins = queryExecute(
+						sql:"INSERT INTO #variables.tablename#
+						(SRC,FILEPATH,METHOD,COUNT,MIN,MAX,AVG,APP,LOAD,QUERY,TOTAL,HASH)
+
+						VALUES(:src,:filepath,:method,:count,:min,:max,:avg,:app,:load,:query,:total,:hash)",
+
+						params:{src:src,filepath:filepath,method:method,count:count,min:min,max:max,avg:avg,app:app,load:load,query:query,total:total,hash:hash(src)},
+
 						options:{
 							datasource:arguments.custom.dsn
 						});
@@ -101,19 +102,7 @@
 		}
 	</cfscript>
 
-	<!--- <cffunction name="output" returntype="void">
-		<cfargument name="custom" type="struct" required="yes" />
-		<cfargument name="debugging" required="true" type="struct" />
-		<cfargument name="context" type="string" default="web" />
 
-		<cfdbinfo name="DoesTableExist" type="Tables" datasource="#arguments.custom.dsn#">
-
-
-		<cfdump var="#DoesTableExist#">
-		<cfdump var="#field#">
-		<cfdump var="#arguments#">
-	</cffunction><!--- output() !--->
- --->
 
 	<cffunction name="doMore" returntype="void">
 		<cfargument name="custom"    type="struct" required="#true#">

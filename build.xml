@@ -62,7 +62,7 @@ trial: false
     </copy>
 
     <copy todir="${build}/extension/applications">
-      <fileset dir="${src}/filecoverage">
+      <fileset dir="filecoverage">
         <include name="**/*.*"/>
       </fileset>
     </copy>
