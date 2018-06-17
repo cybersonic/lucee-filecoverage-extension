@@ -5,13 +5,19 @@ This extension provides a debugging template that logs all the calls to script f
 ## Getting Started
 
 (We are hoping this will go onto the lucee extension store in the future).
-In the meantime, you can checkout the project and run 
+
+
+Check out the installation guide. At the moment this is the main way of installing it until we get this everything ready to be added to the Lucee Extension "store". 
+
+I would love to be able to actually add this to http://forgebox.io too. 
+
+
 
 ### Prerequisites
 
 - Apache Ant to build the project (it is running a simple build.xml file)
-- Lucee 5.x and greater. 
-- Currently it is also using the H2 database extension. Which can be installed 
+- Lucee 5.x and greater. No ACF implementation yet. 
+- Currently it is also using the H2 database extension. Which can be installed fropm the Extension:Applications section of the admin.
 
 
 ### Installing
@@ -38,7 +44,13 @@ The site is now ready for testing. You just need to browse it. The next part is 
 
 ### Reports
 	
-At the moment this is pretty rough and ready and you just need to go to http://localhost/filecoverage to view how which files are being used. 
+At the moment this is pretty rough and ready and you just need to go to http://localhost/filecoverage to view how many hits each file gets as well as some information on which functions/methods are used in a CFC. 
+
+![Listing of files and directories](src/images/list.jpg)
+
+![Details about a CFC](src/images/info.jpg)
+
+
 
 
 <!-- End with an example of getting some data out of the system or using it for a little demo
@@ -74,6 +86,7 @@ You have been warned.
 Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
  -->
 ## Versioning
+
 
 We use [SemVer](http://semver.org/) for versioning. <!-- For the versions available, see the [tags on this repository](https://github.com/your/project/tags).  -->
 

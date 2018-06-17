@@ -1,106 +1,98 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Code Coverage</title>
-
+	<title>File Coverage</title>
+	<style type="text/css">
+		
+		.massive {
+			font-size: 3pc;
+		}
+	</style>
 </head>
 <body>
 <cfparam name="url.dir" default="#expandPath('/')#">
-
+<cfparam name="url.action" default="">
 <cfscript>
-	path = url.dir;
 
-	delimiter = Right(Path,1) EQ "/"? "" : "/";
-	files = DirectoryList(path,false,"name","*.cf*","Name");
-	directories = DirectoryList(path,false,"name","*","Name","dir");
-	output = [];
-	dircount = [];
+reporter = new FCReporter();
+if(url.action EQ "delete"){
+	reporter.deleteCoverage();
+}
 
-	for(file in files){
-		
+report = reporter.getReportForDirectory(url.dir);
+cover = reporter.getCoverageForDirectory(url.dir,true);
 
-
-		item = {
-			path: path & delimiter & file,
-			hitCount: getTotalHits(path & delimiter & file),
-			pathQuery: path & delimiter & file
-		};
-
-		
-		output.append(item);
-	}
-
-	for(dir in directories){
-		dirPath = expandPath(path & delimiter & dir);
-
-		item = {
-			name: dir,
-			path: dirPath,
-			hitCount: getTotalHits(dirPath), 
-			pathQuery: dirPath
-		};
-		dircount.append(item);
-	}
-
-
-	function getTotalHits(PathToFind){
-		var found = queryExecute(sql:"SELECT SUM(count) AS hits FROM FILEACCESS WHERE SRC LIKE '#PathToFind#%'", options:{datasource="codecoverage"});
-
-
-		if(!isNumeric(found.hits)){
-			return 0;
-		}
-		return found.hits;
-	}
 
 </cfscript>
+<cfoutput>
+
+
+
 <div class="container">
-	
+	<h1>File Coverage</h1>
+	<p>
+		PATH: <i>#URL.DIR#</i>
+	</p>
+
 	<div class="row">
-		<a href="/codecoverage" class="btn btn-default">Back</a>
-		<table class="table table-striped">
-			<thead>
-				<tr>
-					<th>Hits</th>
-					<th>Name</th>
-					<th>#</th>
-				</tr>
-			</thead>
-			<tbody>
+		<div class="col-md-12">
+			<div class="btn-group">
+				<a href="#request.basePath#" class="btn btn-default">Back</a>
+				<a href="#request.basePath#?action=delete" class="btn btn-danger">Delete Report</a>	
+			</div>
+		</div>
+	</div>
 
-
-				<cfloop array="#dircount#" item="directory">
-				<cfoutput>	
-
-						<cfset FoundCSS = directory.hitCount? "bg-success" : "bg-danger">
-							<tr>
-								<td class="#FoundCSS#">#directory.hitCount#</td>
-								<td><a href="#CGI.SCRIPT_NAME#?dir=#directory.path#">#directory.name# (#directory.pathQuery#)</a></td>
-								<td><a href="info.cfm?dir=#directory.pathQuery#">Info</a></td>
-							</tr>
-				</cfoutput>	
-				</cfloop>
+	<div class="row">
+		<div class="col-md-4 massive" >
+				#decimalFormat(100/cover.total*cover.accessed)#% Coverage
 				
-				<cfloop array="#output#" item="item">
-				<cfoutput>	<tr>
-								<cfset FoundCSS = item.hitCount? "bg-success" : "bg-danger">
-								<td class="#FoundCSS#">#item.hitCount#</td>
-								<td>#item.path# (#item.pathQuery#)</td>
-								<td><a href="info.cfm?dir=#item.pathQuery#">Info</a></td>
-							</tr>
-				</cfoutput>	
-				</cfloop>
+		</div>
+		<div class="col-md-8">
+			<table class="table table-striped table-bordered">
+				<thead>
+					<tr>
+						<th width="40"></th>
+						<th width="60">Hits</th>
+						<th>Name</th>
+					</tr>
+				</thead>
+				<tbody>
 
-			</tbody>
-		</table>
 
+					<cfloop array="#report.directories#" item="directory">
+					
+
+							<cfset FoundCSS = directory.hits? "bg-success" : "bg-danger">
+								<tr>
+									<td>
+									<span class="glyphicon glyphicon-folder-open"></span></td>
+									<td class="#FoundCSS#">#directory.hits#</td>
+									<td><a href="#CGI.SCRIPT_NAME#?dir=#directory.directory#/#directory.name#">#directory.name#</a></td>
+								<!--- 	<td><a href="info.cfm?dir=#directory.directory#/#directory.name#">Info</a></td> --->
+								</tr>
+					
+					</cfloop>
+					
+					<cfloop array="#report.files#" item="item">
+					<cfoutput>	<tr>
+									<cfset FoundCSS = item.hits? "bg-success" : "bg-danger">
+									<td><span class="glyphicon glyphicon glyphicon-file"></span></td>
+									<td class="#FoundCSS#">#item.hits#</td>
+									<td><a href="info.cfm?dir=#item.directory#/#item.name#">#item.name#</a></td>
+									
+								</tr>
+					</cfoutput>	
+					</cfloop>
+
+				</tbody>
+			</table>
+		</div>
 	</div>
 
 </div>
-<cfscript>
-// found = queryExecute(sql:"SELECT * FROM FILEACCESS", options:{datasource="codecoverage"});
 
-</cfscript>
+</cfoutput>	
 
 
 <!--- <cfdump var="#queryExecute(sql:'SELECT * FROM FILEACCESS', options:{datasource='codecoverage'})#"> --->

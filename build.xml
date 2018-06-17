@@ -62,7 +62,7 @@ trial: false
     </copy>
 
     <copy todir="${build}/extension/applications">
-      <fileset dir="${src}/filecoverage">
+      <fileset dir="filecoverage">
         <include name="**/*.*"/>
       </fileset>
     </copy>
@@ -74,11 +74,15 @@ trial: false
     </copy>
 
 
-    <!-- Zip everything -->
+    <!-- Zip everything with version-->
      <zip destfile="${dist}/${name}-${bundleversion}${build.number}.lex">
         <zipfileset dir="${build}/extension"/>
     </zip>
-		 
+
+    <!-- Create the release file -->
+		<zip destfile="${dist}/${name}.lex">
+        <zipfileset dir="${build}/extension"/>
+    </zip>
   </target> 
 
 </project>
