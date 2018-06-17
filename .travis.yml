@@ -1,8 +1,11 @@
 language: java
 install: ant
 script: ant build
-
 deploy:
-  - provider: releases
-    file: dist/*.lex
-    skip_cleanup: true
+  provider: releases
+  api_key:
+    secure: VCztWP2Y9QQfbhXZvB/4GQ5yNVBLhm6Wm8fchfoFSWlEHk/CE1EcUFe2lcZRnp9kQ17aYXYpE5igrGoC/xq6iwwx+TFsFkBDLAoOuudAD41uxY1x4Lb/hlW8ex+BpRuBadgAc83xr3bfR7pSn8/0Y7WW9w4+Tj2nuotydMlLDmC78Zho1AeDpTwRwPKCzHd/uz7B/VN7MgUgOHuvHVjLL9OKbCX1BBaZN/5MY2rk5cG8uVsHYISDaraADUGxfXeiFe2GmScWt2vuCHQ+MB46WokUwwOdDbBZgr9Z6rOF2PQMNSYmPLxSEvWNFk/5v0LCjYpHpvPrqzz4TsTZ+FbUjzNPQk1DGlTkhJKWJvWi4KsBiQqjPcjZFuC9oD7ht92fYjbTge+88Wdhr3T+lwx5Yvu4VnUrGTPbpWrhhf8PbMUKh1FYyXByByj/k0BJEw7Su0JHGOZyVqQmvkx8MPX9Grxw16ohFrawJo97kKw1k/kGSeXr5ns9rW/e/yzTqqLJr+bW0H47lr5r/zxSGu8V6emVGf0D6JgZuCU/cpiPrnmcUmBdVKXsxNi83IaIc6kV1xZQ7ewuRgGkt39kd068LiJD9kJMVMOnxvYTTQy/wdaKeUbzvu/5tkddcQZfY+T1yTxaHUXj7D7INoFvlIXNO5H0k0XVE/dFOHZpa4AtrR8=
+  file: dist/filecoverage-extension.lex
+  on:
+    repo: cybersonic/lucee-filecoverage-extension
+    branch: develop
