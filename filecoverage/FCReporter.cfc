@@ -72,6 +72,33 @@ component {
 	function getInfoForFile(PathToFind){
 		var raw = queryExecute(sql:"SELECT * FROM #variables.tablename# WHERE FILEPATH =  '#PathToFind#'");
 
+		var type = ListLast(PathToFind,".") EQ "cfc" ? "Component" : "Script";
+
+		var methods = {};
+		//Get  metadata
+		if(type EQ "Component"){
+
+			var dotPath = getDotPathFromPath(PathToFind);
+			var componentMetaData = getComponentMetadata(dotPath);
+
+			for(func in componentMetaData.functions){
+				methods[func.name] = 0;
+			}
+
+			raw.each(function(item, index, query){
+			
+				if(Len(Trim(item.method))){
+					methods[item.method] = methods[item.method]+item.count;
+				}
+				
+			});
+
+		}
+
+
+
+
+
 		var count = raw.reduce(function(hits=0,cols,index,query){
 			return hits + cols.count;
 		});
@@ -83,12 +110,22 @@ component {
 			summary: {
 				name: getFileFromPath(PathToFind),
 				directory: getDirectoryFromPath(PathToFind),
-				type: ListLast(PathToFind,".") EQ "cfc" ? "Component" : "Script",
-				methods: ListToArray(listRemoveDuplicates(valueList(raw.method))),
+				type: type,
+				methods: methods,
 				hits: count,
 				source: FileRead(PathToFind)
 			}
 		}	
+	}
+
+
+	function getDotPathFromPath(PathToFind){
+		var dotPath = contractPath(PathToFind);
+			dotPath = listDeleteAt(dotPath, ListLen(dotPath, "."),".");
+			dotPath = listTrim(dotPath,"/");
+			dotPath = Replace(dotPath, "/", ".", "all");
+
+		return dotPath;
 	}
 
 	//Exact match for a file search
