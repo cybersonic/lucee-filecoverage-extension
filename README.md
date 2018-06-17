@@ -44,7 +44,13 @@ The site is now ready for testing. You just need to browse it. The next part is 
 
 ### Reports
 	
-At the moment this is pretty rough and ready and you just need to go to http://localhost/filecoverage to view how which files are being used. 
+At the moment this is pretty rough and ready and you just need to go to http://localhost/filecoverage to view how many hits each file gets as well as some information on which functions/methods are used in a CFC. 
+
+![Listing of files and directories](src/images/list.jpg)
+
+![Details about a CFC](src/images/info.jpg)
+
+
 
 
 <!-- End with an example of getting some data out of the system or using it for a little demo
