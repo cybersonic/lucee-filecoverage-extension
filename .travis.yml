@@ -1,7 +1,6 @@
 language: java
 install: ant
-# script:
-#   - ant
+script: ant build
 
 deploy:
   - provider: releases
