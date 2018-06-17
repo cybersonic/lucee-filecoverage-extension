@@ -1,0 +1,9 @@
+language: java
+install: ant deps
+script:
+  - ant
+
+deploy:
+  - provider: releases
+    file: dist/*.lex
+    skip_cleanup: true
