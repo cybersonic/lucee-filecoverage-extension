@@ -1,7 +1,7 @@
 language: java
-install: ant deps
-script:
-  - ant
+install: ant
+# script:
+#   - ant
 
 deploy:
   - provider: releases
