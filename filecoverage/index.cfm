@@ -2,6 +2,12 @@
 <html>
 <head>
 	<title>File Coverage</title>
+	<style type="text/css">
+		
+		.massive {
+			font-size: 3pc;
+		}
+	</style>
 </head>
 <body>
 <cfparam name="url.dir" default="#expandPath('/')#">
@@ -14,7 +20,7 @@ if(url.action EQ "delete"){
 }
 
 report = reporter.getReportForDirectory(url.dir);
-cover = reporter.getCoverageForDirectory(url.dir);
+cover = reporter.getCoverageForDirectory(url.dir,true);
 
 
 </cfscript>
@@ -38,7 +44,11 @@ cover = reporter.getCoverageForDirectory(url.dir);
 	</div>
 
 	<div class="row">
-		<div class="col-md-12">
+		<div class="col-md-4 massive" >
+				#decimalFormat(100/cover.total*cover.accessed)#% Coverage
+				
+		</div>
+		<div class="col-md-8">
 			<table class="table table-striped table-bordered">
 				<thead>
 					<tr>

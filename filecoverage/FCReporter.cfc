@@ -11,7 +11,7 @@ component {
 
 
 		
-		var files = DirectoryList(path,false,"query",variables.extensionfilter,"Name");
+		var files = DirectoryList(path,recurse,"query",variables.extensionfilter,"Name");
 
 
 
