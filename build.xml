@@ -22,6 +22,7 @@
 	    <!-- Create the build directory structure used by compile -->
 	    <mkdir dir="${build}/"/>
 	    <mkdir dir="${build}/extension"/>
+
 	    
 
 
@@ -61,7 +62,7 @@ trial: false
       </fileset>
     </copy>
 
-    <copy todir="${build}/extension/applications">
+    <copy todir="${build}/extension/applications/filecoverage" >
       <fileset dir="filecoverage">
         <include name="**/*.*"/>
       </fileset>
