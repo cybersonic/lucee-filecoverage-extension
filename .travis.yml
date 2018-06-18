@@ -5,7 +5,6 @@ deploy:
   provider: releases
   api_key: $TOKEN
   file: dist/filecoverage-extension.lex
-  name: $(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)-SNAPSHOT
   on:
     repo: cybersonic/lucee-filecoverage-extension
     branch: develop
