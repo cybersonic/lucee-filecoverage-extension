@@ -5,6 +5,7 @@ deploy:
   provider: releases
   api_key: $TOKEN
   file: dist/filecoverage-extension.lex
+  skip_cleanup: true
   on:
     repo: cybersonic/lucee-filecoverage-extension
     branch: develop
