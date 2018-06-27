@@ -1,5 +1,5 @@
 # Lucee File Coverage Extension
-
+[![Build Status](https://travis-ci.com/cybersonic/lucee-filecoverage-extension.svg?branch=master)](https://travis-ci.com/cybersonic/lucee-filecoverage-extension)
 This extension provides a debugging template that logs all the calls to script files as a user navigates your site. It then allows you to browse which files have been used and more importantly which have not
 
 ## Getting Started
