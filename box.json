@@ -1,0 +1,38 @@
+{
+    "name":"Lucee File Coverage Debug Template",
+    "version":"0.0.1.13",
+    "author":"Mark Drew",
+    "location":"",
+    "homepage":"https://github.com/cybersonic/lucee-filecoverage-extension/releases",
+    "documentation":"",
+    "repository":{
+        "type":"github",
+        "URL":"git@github.com:cybersonic/lucee-filecoverage-extension.git"
+    },
+    "bugs":"https://github.com/cybersonic/lucee-filecoverage-extension/issues",
+    "slug":"lucee-file-coverage",
+    "shortDescription":"This extension provides a debugging template that logs all the calls to script files as a test or QA person navigates your site. ",
+    "description":"This extension gives you access to see which files are run by Lucee when you make a number of requests. It provides a percentage of coverage per file that your application uses, allowing you to know what you should remove or focus efforts on, such as where you should add tests.",
+    "instructions":" ",
+    "changelog":"",
+    "type":"",
+    "keywords":"lucee extension debugging file code coverage",
+    "private":false,
+    "projectURL":"",
+    "license":[
+        {
+            "type":"MIT License",
+            "URL":"https://raw.githubusercontent.com/cybersonic/lucee-filecoverage-extension/master/LICENSE"
+        }
+    ],
+    "contributors":[],
+    "dependencies":{},
+    "devDependencies":{},
+    "installPaths":{},
+    "scripts":{},
+    "ignore":[
+        "**/.*",
+        "test",
+        "tests"
+    ]
+}
