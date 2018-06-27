@@ -8,4 +8,4 @@ deploy:
   name: $(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)-SNAPSHOT
   on:
     repo: cybersonic/lucee-filecoverage-extension
-    branch: develop
+    branch: master
