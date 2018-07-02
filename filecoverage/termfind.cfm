@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>File Coverage</title>
+	<title>File Coverage: Search Results</title>
 	<style type="text/css">
 		
 		.massive {
@@ -10,25 +10,15 @@
 	</style>
 </head>
 <body>
-<cfparam name="url.dir" default="#expandPath('/')#">
-<cfparam name="url.action" default="">
-<cfparam name="url.terms" default="">
 <cfscript>
 
+param name="form.dir" default="";
+param name="url.dir" default="#form.dir#";
+param name="form.terms" default="";
+
 reporter = new FCReporter();
-if(url.action EQ "delete"){
-	reporter.deleteCoverage();
-}
 
-if(url.action EQ "buildIndex"){
-	ret = reporter.buildIndex(url.dir);
-	session.flash = "Index built. Added #ret.recordcount# records";
-	location url="#request.basePath#" addtoken="false"; //remove the query
-}
-
-report = reporter.getReportForDirectory(url.dir);
-cover = reporter.getCoverageForDirectory(url.dir,true);
-
+res = reporter.findTermsInFiles(form.terms, form.dir);
 
 </cfscript>
 <cfoutput>
@@ -39,19 +29,19 @@ cover = reporter.getCoverageForDirectory(url.dir,true);
 </cfif>
 
 <div class="container">
-	<h1>File Coverage</h1>
+	<h1>Search Results</h1>
 	<p>
-		PATH: <i>#URL.DIR#</i>
+		PATH: <i>#FORM.DIR#</i>
 	</p>
 
 	<div class="row">
 		<cfinclude template="inc_nav.cfm">
-		
 	</div>
 
 	<div class="row">
 		<div class="col-md-4 massive" >
-				#decimalFormat(100/cover.total*cover.accessed)#% Coverage
+			<h1>Search values (found #ArrayLen(res)#)</h1>
+				#listChangeDelims(FORM.TERMS," ")#
 				
 		</div>
 		<div class="col-md-8">
@@ -59,33 +49,18 @@ cover = reporter.getCoverageForDirectory(url.dir,true);
 				<thead>
 					<tr>
 						<th width="40"></th>
-						<th width="60">Hits</th>
+				
 						<th>Name</th>
 					</tr>
 				</thead>
 				<tbody>
 
-
-					<cfloop array="#report.directories#" item="directory">
 					
-
-							<cfset FoundCSS = directory.hits? "bg-success" : "bg-danger">
-								<tr>
-									<td>
-									<span class="glyphicon glyphicon-folder-open"></span></td>
-									<td class="#FoundCSS#">#directory.hits#</td>
-									<td><a href="#CGI.SCRIPT_NAME#?dir=#directory.directory#/#directory.name#">#directory.name#</a></td>
-								<!--- 	<td><a href="info.cfm?dir=#directory.directory#/#directory.name#">Info</a></td> --->
-								</tr>
-					
-					</cfloop>
-					
-					<cfloop array="#report.files#" item="item">
+					<cfloop array="#res#" item="item">
 					<cfoutput>	<tr>
-									<cfset FoundCSS = item.hits? "bg-success" : "bg-danger">
+									<!--- <cfset FoundCSS = item.hits? "bg-success" : "bg-danger"> --->
 									<td><span class="glyphicon glyphicon glyphicon-file"></span></td>
-									<td class="#FoundCSS#">#item.hits#</td>
-									<td><a href="info.cfm?dir=#item.directory#/#item.name#">#item.name#</a></td>
+									<td><a href="termview.cfm?dir=#item#&terms=#FORM.terms#">#item#</a></td>
 									
 								</tr>
 					</cfoutput>	

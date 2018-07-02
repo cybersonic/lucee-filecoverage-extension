@@ -86,4 +86,15 @@ trial: false
     </zip>
   </target> 
 
+  <target name="deployToLocal" depends="build">
+
+    <copy todir="/Users/markdrew/.CommandBox/server/53EDEB2F0273EC9FD050F4B869CDF1D1-lucee-filecoverage-extension/lucee-5.2.7.63/WEB-INF/lucee-web/deploy">
+      <fileset dir="${dist}">
+        <include name="${name}-${bundleversion}${build.number}.lex"/>
+      </fileset>
+    </copy>
+
+
+  </target>
+
 </project>

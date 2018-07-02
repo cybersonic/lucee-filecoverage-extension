@@ -1,13 +1,46 @@
 <cfcomponent extends="Debug" output="no">
 	<cfscript>
 
-		variables.tablename = "lucee_filecoverage_extension";
+		variables.table_activity 		= "__filecoverage_activity";
+		variables.table_cachedresults 	= "__filecoverage_cache";
 		fields=array(
 			  group("Settings","Main Settings of the plugin",3)
-			, field("Datasource Name", "dsn","", true,"" , "text100" )
-
+			// , field(
+			// 	  displayName	: "Datasource"
+			// 	, name			: "dsn"
+			// 	, defaultValue	: getDatasources(true)
+			// 	, required		: true
+			// 	, description	: "Select which datasource to log the activity to"
+			// 	, type			: "select"
+			// 	, values		: getDatasources(false)
+			// 	)
+			, field(
+				  displayName	: "Datasource"
+				, name			: "dsn"
+				, defaultValue	: ""
+				, required		: true
+				, description	: "Select which datasource to log the activity to"
+				, type			: "text100"
+				, values		: ""
+				)
 			
 		);
+
+		
+
+		string function getDatasources(getFirst=false){
+
+			
+			var sessionPWKey = "password" & request.adminType;
+			var admin = new Administrator(type=request.adminType,password="#session[sessionPWKey]#");
+			var datasources = admin.getDatasources();
+				
+			if(getFirst){
+				return ListFirst(valueList(datasources.name));
+			}
+
+			return valueList(datasources.name);
+		}
 
 		string function getLabel(){
 			return "File Coverage";
@@ -24,27 +57,53 @@
 		void function onBeforeUpdate(struct custom){
 			// throwWhenNotNumeric(custom,"minimal");
 			// throwWhenNotNumeric(custom,"highlight");
+
+			try{
 			var createDBTable = queryExecute(
-					sql:"CREATE CACHED TABLE IF NOT EXISTS PUBLIC.#variables.tablename#( 
-							ID BIGINT auto_increment, 
-							SRC VARCHAR(500), 
-							FILEPATH VARCHAR(500),
-							METHOD VARCHAR(255), 
-							COUNT INT, 
-							MIN INT,
-							MAX INT,
-							AVG INT,
-							APP INT,
-							LOAD INT,
-							QUERY INT,
-							TOTAL INT,
-							HASH VARCHAR(100)
+					sql:"CREATE TABLE IF NOT EXISTS #variables.table_activity# ( 
+							`ID` INT auto_increment primary key, 
+							`SRC` VARCHAR(500), 
+							`FILEPATH` VARCHAR(500),
+							`METHOD` VARCHAR(255), 
+							`COUNT` BIGINT, 
+							`MIN` BIGINT,
+							`MAX` BIGINT,
+							`AVG` BIGINT,
+							`APP` BIGINT,
+							`LOAD` BIGINT,
+							`QUERY` BIGINT,
+							`TOTAL` BIGINT,
+							`HASH` VARCHAR(100)
 							)
 						",
 					options:{
 						datasource:arguments.custom.dsn
 					}
-		);
+			);
+			var createDBTable = queryExecute(
+					sql:"CREATE TABLE IF NOT EXISTS #variables.table_cachedresults# ( 
+							`ID` INT auto_increment primary key, 
+							`FILEPATH` VARCHAR(500),
+							`DIRECTORY` VARCHAR(500),
+							`NAME` VARCHAR(500), 
+							`SIZE` BIGINT, 
+							`TYPE` VARCHAR(10),
+							`DATELASTMODIFIED` TIMESTAMP,
+							`ATTRIBUTES` VARCHAR(50),
+							`MODE` VARCHAR(50)
+							)
+						",
+					options:{
+						datasource:arguments.custom.dsn
+					}
+			);
+			}
+			catch(Any e){
+				writeDump(e);
+				abort;
+			}
+
+			
 		}
 
 		private void function throwWhenEmpty(struct custom, string name){
@@ -80,7 +139,7 @@
 
 		function output(custom,debugging,context){
 			
-
+		
 			loop query="debugging.pages"{
 				var filepath = ListFirst(src,"$");
 				var method = ListLast(src,"$");
@@ -88,8 +147,8 @@
 				method = method EQ filepath ? "" : method;
 
 				var ins = queryExecute(
-						sql:"INSERT INTO #variables.tablename#
-						(SRC,FILEPATH,METHOD,COUNT,MIN,MAX,AVG,APP,LOAD,QUERY,TOTAL,HASH)
+						sql:"INSERT INTO #variables.table_activity#
+						(`SRC`,`FILEPATH`,`METHOD`,`COUNT`,`MIN`,`MAX`,`AVG`,`APP`,`LOAD`,`QUERY`,`TOTAL`,`HASH`)
 
 						VALUES(:src,:filepath,:method,:count,:min,:max,:avg,:app,:load,:query,:total,:hash)",
 

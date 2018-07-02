@@ -1,9 +1,36 @@
 component {
 
-	variables.tablename = "lucee_filecoverage_extension";
+	variables.table_activity 		= "__filecoverage_activity";
+	variables.table_cachedresults 	= "__filecoverage_cache";
+
 	variables.extensionfilter = "*.cf*";
 
 	//TODO: Add ignored foldders etc. 
+
+	public any function buildIndex(String path){
+
+
+		createIndexTable(); // Drop and create a new table
+		var files = DirectoryList(path,true,"query",variables.extensionfilter,"Name");
+
+
+		for(file in files){
+			
+			file.filepath = FILE.DIRECTORY & "/" & FILE.NAME;
+			file.datelastmodified = dateTimeFormat(file.DATELASTMODIFIED, "yyyy-MM-dd hh:mm:ss");
+			queryExecute(
+				sql:"INSERT INTO FileCache(	FILEPATH, NAME,SIZE,TYPE,DATELASTMODIFIED,ATTRIBUTES,MODE,DIRECTORY)
+				values(:filepath, :name,:size,:type,:datelastmodified,:attributes,:mode,:directory)", 
+				params:file);
+
+		}
+
+
+		
+		return getAllCache();
+	}
+
+	
 
 	public any function getCoverageForDirectory(String path, boolean recurse=false){
 		
@@ -34,6 +61,30 @@ component {
 	}
 
 
+	public function findTermsInFiles(String terms="", String path, boolean recurse=true){
+
+		if(!Len(Trim(terms))){
+			throw("No search terms defined. What are you looking for?")
+		}
+
+		var terms = listChangeDelims(terms, "|");
+		var res = [];
+		//Files to find
+		var files = DirectoryList(path,recurse,"path",variables.extensionfilter,"Name");
+
+		for(file in files){
+			var contents = Fileread(file);
+
+			if(ReFind("(#terms#)",contents)){
+				res.append(file);
+			}
+
+			
+		}
+
+		return res;
+
+	}
 	public any function getReportForDirectory(String path, boolean recurse=false){
 
 
@@ -70,7 +121,7 @@ component {
 	}
 
 	function getInfoForFile(PathToFind){
-		var raw = queryExecute(sql:"SELECT * FROM #variables.tablename# WHERE FILEPATH =  '#PathToFind#'");
+		var raw = queryExecute(sql:"SELECT * FROM #variables.table_activity# WHERE FILEPATH =  '#PathToFind#'");
 
 		var type = ListLast(PathToFind,".") EQ "cfc" ? "Component" : "Script";
 
@@ -131,7 +182,7 @@ component {
 	//Exact match for a file search
 	function getTotalHits(PathToFind){
 
-		var found = queryExecute(sql:"SELECT SUM(count) AS hits FROM #variables.tablename# WHERE FILEPATH =  '#PathToFind#'");
+		var found = queryExecute(sql:"SELECT SUM(count) AS hits FROM #variables.table_activity# WHERE FILEPATH =  '#PathToFind#'");
 
 
 		if(!isNumeric(found.hits)){
@@ -143,7 +194,7 @@ component {
 	//Finds all the matches of path% rather than an exact match
 	function findTotalHits(PathToFind){
 
-		var found = queryExecute(sql:"SELECT SUM(count) AS hits FROM #variables.tablename# WHERE FILEPATH LIKE  '#PathToFind#%'");
+		var found = queryExecute(sql:"SELECT SUM(count) AS hits FROM #variables.table_activity# WHERE FILEPATH LIKE  '#PathToFind#%'");
 
 		if(!isNumeric(found.hits)){
 			return 0;
@@ -152,38 +203,19 @@ component {
 	}
 
 	function deleteCoverage(){
-		var found = queryExecute(sql:"DELETE FROM #variables.tablename#");
-		writeDump(getAll());
+		var found = queryExecute(sql:"DELETE FROM #variables.table_activity#");
 
 	}
 
-	function createCoverageTable(){
-		var createDBTable = queryExecute(
-					sql:"DROP TABLE IF  EXISTS PUBLIC.#variables.tablename#"
-		);
 
-		var createDBTable = queryExecute(
-					sql:"CREATE CACHED TABLE IF NOT EXISTS PUBLIC.#variables.tablename#( 
-							ID BIGINT auto_increment, 
-							SRC VARCHAR(500), 
-							FILEPATH VARCHAR(500),
-							METHOD VARCHAR(255), 
-							COUNT INT, 
-							MIN INT,
-							MAX INT,
-							AVG INT,
-							APP INT,
-							LOAD INT,
-							QUERY INT,
-							TOTAL INT,
-							HASH VARCHAR(100)
-							)
-						"
-		);
-	}
+	
 
 	function getAll(){
-		return queryExecute(sql:"SELECT * FROM #variables.tablename#");
+		return queryExecute(sql:"SELECT * FROM #variables.table_activity#");
+	}
+
+	function getAllCache(){
+		return queryExecute(sql:"SELECT * FROM FileCache");
 	}
 
 }

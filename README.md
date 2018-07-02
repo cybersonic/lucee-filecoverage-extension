@@ -33,11 +33,11 @@ This will create a file in the `dist` folder called `filecoverage-extension-X.X.
 1. Click on `Applications` under *Extension*
 1. Scroll to the bottom to where it says "Upload new extension (experimental)" and choose the `filecoverage-extension-X.X.X.X.lex` we created and click *Upload*
 1. Since we need to use a database to store the captured data, instal the `H2` database
-1. Create a datasource called `codecoverage` using the H2 Database Engine in Embedded Mode
+1. Create a datasource called `filecoverage` using the H2 Database Engine in Embedded Mode
 1. Put a path in the path section (for example "db") and click save
 1. Under *Debugging:Settings* click "Yes" to enable debugging. 
-1. Under *Debugging:Templates* enter a label such as "CodeCoverage" and select the "File Coverage" template type and click create
-1. In the Datasource Name field enter 'codecoverage' and click submit ( you can also then limit to which IP ranges you want this debugging template to work with)
+1. Under *Debugging:Templates* enter a label such as "filecoverage" and select the "File Coverage" template type and click create
+1. In the Datasource Name field enter 'filecoverage' and click submit ( you can also then limit to which IP ranges you want this debugging template to work with)
 
 The site is now ready for testing. You just need to browse it. The next part is viewing the results.
 
