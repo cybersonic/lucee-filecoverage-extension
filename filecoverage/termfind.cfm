@@ -15,10 +15,15 @@
 param name="form.dir" default="";
 param name="url.dir" default="#form.dir#";
 param name="form.terms" default="";
+param name="form.inCovered" default="false";
 
 reporter = new FCReporter();
+res=[];
 
-res = reporter.findTermsInFiles(form.terms, form.dir);
+if(!isEmpty(FORM.terms)){
+res = reporter.findTermsInFiles(terms=form.terms, path=url.dir, recurse=true, onlyCovered=form.inCovered);	
+}
+
 
 </cfscript>
 <cfoutput>
@@ -60,7 +65,7 @@ res = reporter.findTermsInFiles(form.terms, form.dir);
 					<cfoutput>	<tr>
 									<!--- <cfset FoundCSS = item.hits? "bg-success" : "bg-danger"> --->
 									<td><span class="glyphicon glyphicon glyphicon-file"></span></td>
-									<td><a href="termview.cfm?dir=#item#&terms=#FORM.terms#">#item#</a></td>
+									<td><a href="info.cfm?dir=#item#&terms=#FORM.terms#">#item#</a></td>
 									
 								</tr>
 					</cfoutput>	

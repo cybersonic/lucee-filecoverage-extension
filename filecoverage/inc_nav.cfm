@@ -1,4 +1,9 @@
-<cfoutput><div class="col-md-4">
+<cfparam name="FORM.terms" default="">
+<cfparam name="request.basePath" default="/">
+<cfparam name="url.dir" default="/">
+<cfparam name="FORM.inCovered" default="false">
+<cfoutput>
+	<div class="col-md-4">
 			<div class="btn-group">
 				<a href="#request.basePath#" class="btn btn-default">Back</a>
 				<a href="#request.basePath#?action=delete" class="btn btn-danger">Delete Report</a>	
@@ -14,11 +19,12 @@
 				</div>
 				<div class="form-group">
 					<label>
-						<input type="checkbox" class="form-control" name="inCovered"> only covered files
+						<input type="checkbox" class="form-control" name="inCovered" value="true" #FORM.inCovered?"checked":""#> only covered files
 					</label>
 				</div>
 					
 					<input type="hidden" name="dir" value="#url.dir#">
 					<input type="submit" class="btn btn-primary" >
 			</form>
-		</div></cfoutput>
+	</div>
+</cfoutput>

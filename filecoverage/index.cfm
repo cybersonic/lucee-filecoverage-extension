@@ -22,14 +22,11 @@ if(url.action EQ "delete"){
 
 if(url.action EQ "buildIndex"){
 	ret = reporter.buildIndex(url.dir);
-	session.flash = "Index built. Added #ret.recordcount# records";
+	session.flash = "Index built. Added #ret# records";
 	location url="#request.basePath#" addtoken="false"; //remove the query
 }
-
 report = reporter.getReportForDirectory(url.dir);
-cover = reporter.getCoverageForDirectory(url.dir,true);
-
-
+// cover = reporter.getCoverageForDirectory(url.dir,true);
 </cfscript>
 <cfoutput>
 
@@ -51,7 +48,7 @@ cover = reporter.getCoverageForDirectory(url.dir,true);
 
 	<div class="row">
 		<div class="col-md-4 massive" >
-				#decimalFormat(100/cover.total*cover.accessed)#% Coverage
+				<!--- #decimalFormat(100/cover.total*cover.accessed)#% Coverage --->
 				
 		</div>
 		<div class="col-md-8">
@@ -66,26 +63,28 @@ cover = reporter.getCoverageForDirectory(url.dir,true);
 				<tbody>
 
 
-					<cfloop array="#report.directories#" item="directory">
+					<cfloop query="report.directories">
 					
-
-							<cfset FoundCSS = directory.hits? "bg-success" : "bg-danger">
+							<cfset hits = isEmpty(hits)? 0 : hits>
+							<cfset FoundCSS = hits GT 0 ? "bg-success" : "bg-danger">
 								<tr>
 									<td>
 									<span class="glyphicon glyphicon-folder-open"></span></td>
-									<td class="#FoundCSS#">#directory.hits#</td>
-									<td><a href="#CGI.SCRIPT_NAME#?dir=#directory.directory#/#directory.name#">#directory.name#</a></td>
+									<td class="#FoundCSS#">#hits#</td>
+									<td><a href="#CGI.SCRIPT_NAME#?dir=#directory#/#name#">#name#</a></td>
 								<!--- 	<td><a href="info.cfm?dir=#directory.directory#/#directory.name#">Info</a></td> --->
 								</tr>
 					
 					</cfloop>
 					
-					<cfloop array="#report.files#" item="item">
-					<cfoutput>	<tr>
-									<cfset FoundCSS = item.hits? "bg-success" : "bg-danger">
+					<cfloop query="#report.files#">
+					<cfoutput>	
+								<cfset hits = isEmpty(hits)? 0 : hits>
+								<cfset FoundCSS = hits GT 0 ? "bg-success" : "bg-danger">
+								<tr>
 									<td><span class="glyphicon glyphicon glyphicon-file"></span></td>
-									<td class="#FoundCSS#">#item.hits#</td>
-									<td><a href="info.cfm?dir=#item.directory#/#item.name#">#item.name#</a></td>
+									<td class="#FoundCSS#">#hits#</td>
+									<td><a href="info.cfm?dir=#directory#/#name#">#name#</a></td>
 									
 								</tr>
 					</cfoutput>	
