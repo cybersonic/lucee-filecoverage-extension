@@ -253,35 +253,42 @@ component {
 		return queryExecute(sql:"SELECT * FROM #variables.table_cachedresults#");
 	}
 
-	function getTopHitFiles(String dir){
+	//Return the files that are most used. 
+	function getTopHitFiles(String dir, numeric max=10){
+		var dir = removeLastSlash(dir) & "%";
 
 		return queryExecute(sql:"
 			SELECT a.*, SUM(COUNT) AS HITS 
 			FROM __filecoverage_activity a
-			WHERE FILEPATH LIKE ':dir%'
+			WHERE FILEPATH LIKE ?
 			GROUP BY FILEPATH
 			ORDER BY SUM(COUNT) DESC
-			", params: {dir:dir});
+			", params: [dir]);
 
 	}
 
-	function getEntriesFromCache(required string dir, required string type="File", boolean recurse=false){
+	private function removeLastSlash(String dir){
+		return Right(dir,1) EQ "/"? MID(dir,1,Len(dir)-1) :  dir;
+	}
+	//Internal fucntion to get all the entries from the cache. 
+
+	private function getEntriesFromCache(required string dir, required string type="File", boolean recurse=false){
 
 		//Clean the dir
 		var dir = Right(dir,1) EQ "/"? MID(dir,1,Len(dir)-1) :  dir;
 		
 		if(recurse){
 			return queryExecute(sql:"
-			SELECT c.*, SUM(a.count) AS HITS
-			FROM __filecoverage_cache c
-				LEFT JOIN __filecoverage_activity a ON c.FILEPATH = a.FILEPATH
+				SELECT c.*, SUM(a.count) AS HITS
+				FROM __filecoverage_cache c
+					LEFT JOIN __filecoverage_activity a ON c.FILEPATH = a.FILEPATH
 
-			WHERE TYPE = :type
-			AND DIRECTORY LIKE ':dir%'
-			GROUP BY c.FILEPATH
-			ORDER BY DIRECTORY
+				WHERE TYPE = :type
+				AND DIRECTORY LIKE ':dir%'
+				GROUP BY c.FILEPATH
+				ORDER BY DIRECTORY
 
-			", params: {dir:dir,type:type});
+				", params: {dir:dir,type:type});
 		}
 
 		return queryExecute(sql:"

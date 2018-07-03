@@ -26,6 +26,8 @@ if(url.action EQ "buildIndex"){
 	location url="#request.basePath#" addtoken="false"; //remove the query
 }
 report = reporter.getReportForDirectory(url.dir);
+
+highHitters = reporter.getTopHitFiles(url.dir);
 // cover = reporter.getCoverageForDirectory(url.dir,true);
 </cfscript>
 <cfoutput>
@@ -35,7 +37,7 @@ report = reporter.getReportForDirectory(url.dir);
 	<div class="alert alert-success" role="alert">#session.getFlash()#</div>
 </cfif>
 
-<div class="container">
+<div class="container-fluid">
 	<h1>File Coverage</h1>
 	<p>
 		PATH: <i>#URL.DIR#</i>
@@ -47,8 +49,35 @@ report = reporter.getReportForDirectory(url.dir);
 	</div>
 
 	<div class="row">
-		<div class="col-md-4 massive" >
+		<div class="col-md-4" >
 				<!--- #decimalFormat(100/cover.total*cover.accessed)#% Coverage --->
+				
+				<table class="table table-striped table-bordered">
+				<thead>
+					<tr>
+						<th width="40"></th>
+						<th width="60">Hits</th>
+						<th>Name</th>
+					</tr>
+				</thead>
+				<tbody>
+
+					<cfloop query="#highHitters#">
+					<cfoutput>	
+								<cfset hits = isEmpty(hits)? 0 : hits>
+								<cfset FoundCSS = hits GT 0 ? "bg-success" : "bg-danger">
+								<tr>
+									<td><span class="glyphicon glyphicon glyphicon-file"></span></td>
+									<td class="#FoundCSS#">#hits#</td>
+									<td><a href="info.cfm?dir=#filepath#">#filepath#</a></td>
+									
+								</tr>
+					</cfoutput>
+					</cfloop>
+
+					
+				</tbody>
+				</table>
 				
 		</div>
 		<div class="col-md-8">
