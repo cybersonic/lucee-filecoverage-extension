@@ -7,61 +7,80 @@ component {
 
 	//TODO: Add ignored foldders etc. 
 
-	public any function buildIndex(String path){
+	public numeric function buildIndex(String path){
+		//This might take a long time. Wonder if there are better bulk insert 
+		setting requesttimeout="300";
+		var count = 0;
+		deleteCache(); // Drop and create a new table
+
+			var dirs = DirectoryList(path,true,"query","","Name", "Dir");	
+		
+			for(dir in dirs){
+				dir.filepath = dir.DIRECTORY & "/" & dir.NAME;
+				dir.datelastmodified = dateTimeFormat(dir.DATELASTMODIFIED, "yyyy-MM-dd hh:mm:ss");
+				queryExecute(
+					sql:"INSERT INTO #variables.table_cachedresults# (	FILEPATH, NAME,SIZE,TYPE,DATELASTMODIFIED,ATTRIBUTES,MODE,DIRECTORY)
+					values(:filepath, :name,:size,:type,:datelastmodified,:attributes,:mode,:directory)", 
+					params:dir);
+			}
 
 
-		createIndexTable(); // Drop and create a new table
+
 		var files = DirectoryList(path,true,"query",variables.extensionfilter,"Name");
 
 
 		for(file in files){
-			
 			file.filepath = FILE.DIRECTORY & "/" & FILE.NAME;
 			file.datelastmodified = dateTimeFormat(file.DATELASTMODIFIED, "yyyy-MM-dd hh:mm:ss");
 			queryExecute(
-				sql:"INSERT INTO FileCache(	FILEPATH, NAME,SIZE,TYPE,DATELASTMODIFIED,ATTRIBUTES,MODE,DIRECTORY)
+				sql:"INSERT INTO #variables.table_cachedresults# (	FILEPATH, NAME,SIZE,TYPE,DATELASTMODIFIED,ATTRIBUTES,MODE,DIRECTORY)
 				values(:filepath, :name,:size,:type,:datelastmodified,:attributes,:mode,:directory)", 
 				params:file);
-
+			count++;
 		}
 
+		//Get all the directories here! 
+
+
+
+		return count;
 
 		
-		return getAllCache();
+		// return getAllCache();
 	}
 
 	
 
-	public any function getCoverageForDirectory(String path, boolean recurse=false){
+	public any function getCoverageForDirectory(String path, boolean recurse=false, boolean useCache=true){
 		
-		var delimiter = Right(Path,1) EQ "/"? "" : "/";
+		// var delimiter = Right(Path,1) EQ "/"? "" : "/";
 
 
-		
-		var files = DirectoryList(path,recurse,"query",variables.extensionfilter,"Name");
+		// var files = getDirectoryFromCache(path);
 
 
+		// var results = {
+		// 	total: files.recordcount,
+		// 	accessed: 0
+		// }
 
-		var results = {
-			total: files.recordcount,
-			accessed: 0
-		}
+		// return results;
 
 
-		loop query="files"{
-			//See if any of these have hits!
-			var hitsForThisScript = getTotalHits(directory & "/" & name);
+		// loop query="files"{
+		// 	//See if any of these have hits!
+		// 	var hitsForThisScript = getTotalHits(directory & "/" & name);
 
-			if(hitsForThisScript){
-				results.accessed++;
-			}
+		// 	if(hitsForThisScript){
+		// 		results.accessed++;
+		// 	}
 			
-		}
-		return results;
+		// }
+		// return results;
 	}
 
 
-	public function findTermsInFiles(String terms="", String path, boolean recurse=true){
+	public function findTermsInFiles(String terms="", String path, boolean recurse=true, boolean onlyCovered=false){
 
 		if(!Len(Trim(terms))){
 			throw("No search terms defined. What are you looking for?")
@@ -69,12 +88,20 @@ component {
 
 		var terms = listChangeDelims(terms, "|");
 		var res = [];
-		//Files to find
-		var files = DirectoryList(path,recurse,"path",variables.extensionfilter,"Name");
+		var files = [];
+
+		//Which files are we going to get?
+		if(onlyCovered){
+			//TODO //Handle recurse into sub folders. 
+			var files = getDistinctScannedFiles(path); 
+		}
+		else {
+			var files = DirectoryList(path,recurse,"path",variables.extensionfilter,"Name");	
+		}
+		
 
 		for(file in files){
 			var contents = Fileread(file);
-
 			if(ReFind("(#terms#)",contents)){
 				res.append(file);
 			}
@@ -85,39 +112,45 @@ component {
 		return res;
 
 	}
-	public any function getReportForDirectory(String path, boolean recurse=false){
+	public any function getReportForDirectory(String path, boolean recurse=false, boolean useCache=true){
+
+		//Always use Cache. 
+
+
 
 
 		//Directories need to be calculated differently, as we get a roll up of all files accesed underneath them rather than an exact match. 
-
-		var ret_files = [];
-		var ret_dirs = [];
-
-		var files = DirectoryList(path,recurse,"query",variables.extensionfilter,"name","all")
-
-		for(file in files){
-
-
-			file["hits"] = getTotalHits(file.directory & "/" & file.name);
-			ret_files.append(file);
+		timer label="GetFromCache" type="inline"{
+		var ret_files = getFilesFromCache(path);
+		var ret_dirs = getDirectoriesFromCache(path);
 		}
 
-	
 		
-		var directories = DirectoryList(path,recurse, "query", "*","name", "dir");
+		timer label="GetAllHits" type="inline"{
+			for(dir in ret_dirs){
+				querySetCell(ret_dirs, "hits", findTotalHits(dir.directory & "/" & dir.name),ret_dirs.currentRow);
+			}
 
-		for(dir in directories){
-
-			dir["hits"] = findTotalHits(dir.directory & "/" & dir.name);
-			ret_dirs.append(dir);
 		}
-
-
 		
 		return {
 			files:ret_files,
 			directories:ret_dirs
 		}
+	}
+
+
+	function getDistinctScannedFiles(String PathToFind){
+		
+		var found = queryExecute(sql:"
+		SELECT DISTINCT filepath 
+		FROM #variables.table_activity# 
+		WHERE filepath LIKE '#PathToFind#%'
+		ORDER BY filepath ASC
+		");
+
+		return valueArray(found.filepath);
+
 	}
 
 	function getInfoForFile(PathToFind){
@@ -203,11 +236,13 @@ component {
 	}
 
 	function deleteCoverage(){
-		var found = queryExecute(sql:"DELETE FROM #variables.table_activity#");
+		queryExecute(sql:"DELETE FROM #variables.table_activity#");
 
 	}
 
-
+	function deleteCache(){
+		queryExecute(sql:"DELETE FROM #variables.table_cachedresults#");
+	}
 	
 
 	function getAll(){
@@ -215,7 +250,58 @@ component {
 	}
 
 	function getAllCache(){
-		return queryExecute(sql:"SELECT * FROM FileCache");
+		return queryExecute(sql:"SELECT * FROM #variables.table_cachedresults#");
 	}
 
+	function getTopHitFiles(String dir){
+
+		return queryExecute(sql:"
+			SELECT a.*, SUM(COUNT) AS HITS 
+			FROM __filecoverage_activity a
+			WHERE FILEPATH LIKE ':dir%'
+			GROUP BY FILEPATH
+			ORDER BY SUM(COUNT) DESC
+			", params: {dir:dir});
+
+	}
+
+	function getEntriesFromCache(required string dir, required string type="File", boolean recurse=false){
+
+		//Clean the dir
+		var dir = Right(dir,1) EQ "/"? MID(dir,1,Len(dir)-1) :  dir;
+		
+		if(recurse){
+			return queryExecute(sql:"
+			SELECT c.*, SUM(a.count) AS HITS
+			FROM __filecoverage_cache c
+				LEFT JOIN __filecoverage_activity a ON c.FILEPATH = a.FILEPATH
+
+			WHERE TYPE = :type
+			AND DIRECTORY LIKE ':dir%'
+			GROUP BY c.FILEPATH
+			ORDER BY DIRECTORY
+
+			", params: {dir:dir,type:type});
+		}
+
+		return queryExecute(sql:"
+			SELECT c.*, SUM(a.count) AS HITS
+			FROM __filecoverage_cache c
+				LEFT JOIN __filecoverage_activity a ON c.FILEPATH = a.FILEPATH
+
+			WHERE TYPE = :type
+			AND DIRECTORY = :dir
+			GROUP BY c.FILEPATH
+			ORDER BY DIRECTORY
+
+			", params: {dir:dir,type:type});
+	}
+
+	function getFilesFromCache(required string dir, boolean recurse=false) cachedWithin="#createTimespan(0, 0, 1, 0)#"{
+		return getEntriesFromCache(dir, "File");
+	}
+
+	function getDirectoriesFromCache(required string dir, boolean recurse=false) cachedWithin="#createTimespan(0, 0, 1, 0)#" {
+		return getEntriesFromCache(dir, "Dir");
+	}
 }
