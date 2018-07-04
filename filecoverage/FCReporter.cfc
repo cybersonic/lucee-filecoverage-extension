@@ -6,6 +6,28 @@ component {
 	variables.extensionfilter = "*.cf*";
 
 	//TODO: Add ignored foldders etc. 
+	public void function addIgnore(String dir){
+		param name="APPLICATION.ignoredDirectories" default="#[]#";
+
+		//Quick fix in case I made it into a list. 
+		if(!isArray(APPLICATION.ignoredDirectories)){
+			setIgnores(APPLICATION.ignoredDirectories)
+		}
+
+		APPLICATION.ignoredDirectories.append(dir)
+	}
+
+	public void function setIgnores(String dirs){
+		APPLICATION.ignoredDirectories = listToArray(dirs);
+	}
+
+	public String function getIgnoresAsList(){
+		return ArrayToList(getIgnores());
+	}
+
+	public Array function getIgnores(){
+		return APPLICATION.ignoredDirectories;
+	}
 
 	public numeric function buildIndex(String path){
 		//This might take a long time. Wonder if there are better bulk insert 
@@ -52,7 +74,7 @@ component {
 	
 
 	public any function getCoverageForDirectory(String path, boolean recurse=false, boolean useCache=true){
-		
+			throw("Not implemented");
 		// var delimiter = Right(Path,1) EQ "/"? "" : "/";
 
 
@@ -96,17 +118,19 @@ component {
 			var files = getDistinctScannedFiles(path); 
 		}
 		else {
-			var files = DirectoryList(path,recurse,"path",variables.extensionfilter,"Name");	
+			var files = getFilesFromCache(path);
+			
 		}
 		
 
 		for(file in files){
 			var contents = Fileread(file);
-			if(ReFind("(#terms#)",contents)){
-				res.append(file);
-			}
+			var findResults = reFindNoCase("(#terms#)",contents,1,true);
 
-			
+			if(findResults.len[1] NEQ 0){
+				var item = {file:file,findResults:findResults,contents:contents};
+				res.append(item);
+			}
 		}
 
 		return res;
@@ -143,11 +167,37 @@ component {
 	function getDistinctScannedFiles(String PathToFind){
 		
 		var found = queryExecute(sql:"
-		SELECT DISTINCT filepath 
-		FROM #variables.table_activity# 
-		WHERE filepath LIKE '#PathToFind#%'
-		ORDER BY filepath ASC
+			SELECT DISTINCT filepath, directory 
+			FROM #variables.table_activity# 
+			WHERE filepath LIKE '#PathToFind#%'
+			ORDER BY filepath, directory ASC
 		");
+
+
+
+		
+		//Filter it if we have ignored paths. Easier than a big messy query.
+		if(getIgnores().len()){
+			var found = queryExecute(
+				sql:"
+					SELECT * FROM found 
+					WHERE DIRECTORY NOT IN (:ignores)
+				",
+				params: {
+					ignores:{
+						value: getIgnoresAsList(),
+						list: true,
+						cfsqltype: "CF_SQL_VARCHAR"
+					}
+				},
+				options: {
+					dbtype: "query"
+				}
+				);
+			writeDump(found);
+
+			abort;
+		}
 
 		return valueArray(found.filepath);
 
@@ -253,12 +303,28 @@ component {
 		return queryExecute(sql:"SELECT * FROM #variables.table_cachedresults#");
 	}
 
-	//Return the files that are most used. 
+	//Return the files that are most used recursing down this directory 
 	function getTopHitFiles(String dir, numeric max=10){
 		var dir = removeLastSlash(dir) & "%";
 
+		//If we have ignores:
+
+		if(getIgnores().len()){
+			return queryExecute(sql:"
+				SELECT a.*, IFNULL(SUM(COUNT), 0) AS HITS 
+				FROM __filecoverage_activity a
+				WHERE FILEPATH LIKE :dir
+				GROUP BY FILEPATH
+				ORDER BY SUM(COUNT) DESC
+				", params: {
+					dir:dir
+				});
+
+		}
+
+
 		return queryExecute(sql:"
-			SELECT a.*, SUM(COUNT) AS HITS 
+			SELECT a.*, IFNULL(SUM(COUNT), 0) AS HITS 
 			FROM __filecoverage_activity a
 			WHERE FILEPATH LIKE ?
 			GROUP BY FILEPATH
@@ -270,6 +336,9 @@ component {
 	private function removeLastSlash(String dir){
 		return Right(dir,1) EQ "/"? MID(dir,1,Len(dir)-1) :  dir;
 	}
+	private function addLastSlash(String dir){
+		return Right(dir,1) EQ "/"? dir: dir & "/";
+	}
 	//Internal fucntion to get all the entries from the cache. 
 
 	private function getEntriesFromCache(required string dir, required string type="File", boolean recurse=false){
@@ -277,31 +346,55 @@ component {
 		//Clean the dir
 		var dir = Right(dir,1) EQ "/"? MID(dir,1,Len(dir)-1) :  dir;
 		
+
+
+
 		if(recurse){
 			return queryExecute(sql:"
-				SELECT c.*, SUM(a.count) AS HITS
+				SELECT c.*,IFNULL(SUM(a.count),0) AS HITS
 				FROM __filecoverage_cache c
 					LEFT JOIN __filecoverage_activity a ON c.FILEPATH = a.FILEPATH
 
 				WHERE TYPE = :type
-				AND DIRECTORY LIKE ':dir%'
+				AND c.DIRECTORY LIKE ':dir%'
+				AND c.DIRECTORY NOT IN (:ignores)
 				GROUP BY c.FILEPATH
 				ORDER BY DIRECTORY
 
-				", params: {dir:dir,type:type});
+				", params: {
+						dir:dir,
+						type:type,
+						ignores:{
+							value:getIgnoresAsList(),
+							list:true,
+							sqltype: "CF_SQL_VARCHAR"
+						}
+					}
+				);
+		}
+
+		//If we are NOT recursing, but getting an actual directory, we can check if it is ignored. 
+
+
+		if(getIgnores().contains(dir)){
+			return QueryNew("empty");
 		}
 
 		return queryExecute(sql:"
-			SELECT c.*, SUM(a.count) AS HITS
+			SELECT c.*, IFNULL(SUM(a.count),0) AS HITS
 			FROM __filecoverage_cache c
 				LEFT JOIN __filecoverage_activity a ON c.FILEPATH = a.FILEPATH
 
 			WHERE TYPE = :type
-			AND DIRECTORY = :dir
+			AND c.DIRECTORY = :dir
 			GROUP BY c.FILEPATH
 			ORDER BY DIRECTORY
 
-			", params: {dir:dir,type:type});
+			", params: {
+						dir:dir,
+						type:type
+						
+					});
 	}
 
 	function getFilesFromCache(required string dir, boolean recurse=false) cachedWithin="#createTimespan(0, 0, 1, 0)#"{

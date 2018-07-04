@@ -64,6 +64,7 @@
 							`ID` INT auto_increment primary key, 
 							`SRC` VARCHAR(500), 
 							`FILEPATH` VARCHAR(500),
+							`DIRECTORY` VARCHAR(500),
 							`METHOD` VARCHAR(255), 
 							`COUNT` BIGINT, 
 							`MIN` BIGINT,
@@ -145,14 +146,14 @@
 				var method = ListLast(src,"$");
 
 				method = method EQ filepath ? "" : method;
-
+				
 				var ins = queryExecute(
 						sql:"INSERT INTO #variables.table_activity#
-						(`SRC`,`FILEPATH`,`METHOD`,`COUNT`,`MIN`,`MAX`,`AVG`,`APP`,`LOAD`,`QUERY`,`TOTAL`,`HASH`)
+						(`SRC`,`FILEPATH`,`DIRECTORY`,`METHOD`,`COUNT`,`MIN`,`MAX`,`AVG`,`APP`,`LOAD`,`QUERY`,`TOTAL`,`HASH`)
 
-						VALUES(:src,:filepath,:method,:count,:min,:max,:avg,:app,:load,:query,:total,:hash)",
+						VALUES(:src,:filepath,:directory,:method,:count,:min,:max,:avg,:app,:load,:query,:total,:hash)",
 
-						params:{src:src,filepath:filepath,method:method,count:count,min:min,max:max,avg:avg,app:app,load:load,query:query,total:total,hash:hash(src)},
+						params:{src:src,filepath:filepath,directory:getDirectoryFromPath(filepath),method:method,count:count,min:min,max:max,avg:avg,app:app,load:load,query:query,total:total,hash:hash(src)},
 
 						options:{
 							datasource:arguments.custom.dsn

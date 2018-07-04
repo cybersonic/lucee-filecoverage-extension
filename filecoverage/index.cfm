@@ -1,15 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<title>File Coverage</title>
-	<style type="text/css">
-		
-		.massive {
-			font-size: 3pc;
-		}
-	</style>
-</head>
-<body>
+<cf_layout>
 <cfparam name="url.dir" default="#expandPath('/')#">
 <cfparam name="url.action" default="">
 <cfparam name="url.terms" default="">
@@ -31,7 +20,11 @@ highHitters = reporter.getTopHitFiles(url.dir);
 // cover = reporter.getCoverageForDirectory(url.dir,true);
 </cfscript>
 <cfoutput>
-
+<!--- 
+	Can enable capturing or not
+	Task 1) Create ignore filters for capture (or blank those out)
+<cfset SERVER._FC_CAPTURE = true>
+<cfdump var="#SERVER#"> --->
 
 <cfif session.hasFlash()>
 	<div class="alert alert-success" role="alert">#session.getFlash()#</div>
@@ -80,6 +73,7 @@ highHitters = reporter.getTopHitFiles(url.dir);
 				</table>
 				
 		</div>
+		<cfdump var="#report.directories#">
 		<div class="col-md-8">
 			<table class="table table-striped table-bordered">
 				<thead>
@@ -87,9 +81,11 @@ highHitters = reporter.getTopHitFiles(url.dir);
 						<th width="40"></th>
 						<th width="60">Hits</th>
 						<th>Name</th>
+						<th width="20"></th>
 					</tr>
 				</thead>
 				<tbody>
+
 
 
 					<cfloop query="report.directories">
@@ -101,7 +97,8 @@ highHitters = reporter.getTopHitFiles(url.dir);
 									<span class="glyphicon glyphicon-folder-open"></span></td>
 									<td class="#FoundCSS#">#hits#</td>
 									<td><a href="#CGI.SCRIPT_NAME#?dir=#directory#/#name#">#name#</a></td>
-								<!--- 	<td><a href="info.cfm?dir=#directory.directory#/#directory.name#">Info</a></td> --->
+									<td><a href="ingore.cfm?dir=#directory#/#name#"><i class="glyphicon glyphicon-eye-close"></i></a></td>
+
 								</tr>
 					
 					</cfloop>
@@ -114,6 +111,7 @@ highHitters = reporter.getTopHitFiles(url.dir);
 									<td><span class="glyphicon glyphicon glyphicon-file"></span></td>
 									<td class="#FoundCSS#">#hits#</td>
 									<td><a href="info.cfm?dir=#directory#/#name#">#name#</a></td>
+									<td></td>
 									
 								</tr>
 					</cfoutput>	
@@ -127,18 +125,4 @@ highHitters = reporter.getTopHitFiles(url.dir);
 </div>
 
 </cfoutput>	
-
-
-<!--- <cfdump var="#queryExecute(sql:'SELECT * FROM FILEACCESS', options:{datasource='codecoverage'})#"> --->
-
-<!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
-<!-- Optional theme -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-<!-- Latest compiled and minified JavaScript -->
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-
-</body>
-</html>
+</cf_layout>
