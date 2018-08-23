@@ -3,6 +3,11 @@
 <cfparam name="url.dir" default="/">
 <cfparam name="FORM.inCovered" default="false">
 <cfparam name="session.searchterms" default="">
+<cfscript>
+reporter = new FCReporter();
+testnames = reporter.getTestnames();
+
+</cfscript>
 <cfoutput>
 	<div class="col-md-4">
 			<div class="btn-group">
@@ -21,7 +26,22 @@
 						<input type="search" class="form-control" name="terms" id="terms" placeholder="e.g.: cffile,fileRead,fileWrite" value="#session.searchterms#"> 
 					</div>
 				</div>
+				<div class="form-group">
+					<label for="terms" class="col-sm-2 control-label">Tests:</label>
+					<div class="col-sm-10">
+						<select class="form-control" name="testname">
+								<option>ALL</option>
+							<cfloop query="testnames">
+								<cfif  NOT LEN(Trim(TESTNAME))>
+									<option value="">-- empty --</option>
+								<cfelse>
+									<option>#TESTNAME#</option>
+								</cfif>
 
+							</cfloop>
+						</select>
+					</div>
+				</div>
 				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">
 						<div class="checkbox">

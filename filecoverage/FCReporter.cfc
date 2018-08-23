@@ -18,14 +18,28 @@ component {
 	}
 
 	public void function setIgnores(String dirs){
-		APPLICATION.ignoredDirectories = listToArray(dirs);
+
+		APPLICATION.ignoredDirectories = listToArray(dirs, chr(10));
 	}
 
 	public String function getIgnoresAsList(){
 		return ArrayToList(getIgnores());
 	}
+	public String function getIgnoresAsRegEx(){
+		var retArr = Duplicate(getIgnores());
+		var newItem = [];
+		retArr.each(function(item,index,all){
+			if(!isEmpty(Trim(item))){
+				
+				newItem.append(Trim(replace(item,"*", "(.*)","all")));
+			}
+		});
+
+		return newItem.toList("|");
+	}
 
 	public Array function getIgnores(){
+		param name="APPLICATION.ignoredDirectories" default="#ArrayNew()#";
 		return APPLICATION.ignoredDirectories;
 	}
 
@@ -33,16 +47,22 @@ component {
 		//This might take a long time. Wonder if there are better bulk insert 
 		setting requesttimeout="300";
 		var count = 0;
-		deleteCache(); // Drop and create a new table
+		deleteCache(); // Drop data
+
+
+		//Create hashes here and use those as ID's. Then they are always the same. 
 
 			var dirs = DirectoryList(path,true,"query","","Name", "Dir");	
 		
 			for(dir in dirs){
 				dir.filepath = dir.DIRECTORY & "/" & dir.NAME;
+
+				dir.id = hash(dir.filepath & "dir");
+
 				dir.datelastmodified = dateTimeFormat(dir.DATELASTMODIFIED, "yyyy-MM-dd hh:mm:ss");
 				queryExecute(
-					sql:"INSERT INTO #variables.table_cachedresults# (	FILEPATH, NAME,SIZE,TYPE,DATELASTMODIFIED,ATTRIBUTES,MODE,DIRECTORY)
-					values(:filepath, :name,:size,:type,:datelastmodified,:attributes,:mode,:directory)", 
+					sql:"INSERT INTO #variables.table_cachedresults# (ID,FILEPATH, NAME,SIZE,TYPE,DATELASTMODIFIED,ATTRIBUTES,MODE,DIRECTORY)
+					values(:id, :filepath, :name,:size,:type,:datelastmodified,:attributes,:mode,:directory)", 
 					params:dir);
 			}
 
@@ -53,10 +73,11 @@ component {
 
 		for(file in files){
 			file.filepath = FILE.DIRECTORY & "/" & FILE.NAME;
+			file.id = hash(file.filepath & "file");
 			file.datelastmodified = dateTimeFormat(file.DATELASTMODIFIED, "yyyy-MM-dd hh:mm:ss");
 			queryExecute(
-				sql:"INSERT INTO #variables.table_cachedresults# (	FILEPATH, NAME,SIZE,TYPE,DATELASTMODIFIED,ATTRIBUTES,MODE,DIRECTORY)
-				values(:filepath, :name,:size,:type,:datelastmodified,:attributes,:mode,:directory)", 
+				sql:"INSERT INTO #variables.table_cachedresults# (ID,FILEPATH, NAME,SIZE,TYPE,DATELASTMODIFIED,ATTRIBUTES,MODE,DIRECTORY)
+				values(:id, :filepath, :name,:size,:type,:datelastmodified,:attributes,:mode,:directory)", 
 				params:file);
 			count++;
 		}
@@ -71,7 +92,31 @@ component {
 		// return getAllCache();
 	}
 
-	
+	/**
+		Used to log usually from OnRequestEnd
+	**/ 
+	public void function logRequest(string dsn,string TESTNAME = ""){
+
+		var debugging = getPageContext().getDebugger().getDebuggingData(getPageContext());
+		loop query="debugging.pages"{
+				var filepath = ListFirst(src,"$");
+				var method = ListLast(src,"$");
+
+				method = method EQ filepath ? "" : method;
+				
+				var ins = queryExecute(
+						sql:"INSERT INTO #variables.table_activity#
+						(`SRC`,`FILEPATH`,`DIRECTORY`,`METHOD`,`COUNT`,`MIN`,`MAX`,`AVG`,`APP`,`LOAD`,`QUERY`,`TOTAL`,`HASH`, `TESTNAME`)
+
+						VALUES(:src,:filepath,:directory,:method,:count,:min,:max,:avg,:app,:load,:query,:total,:hash, :testname)",
+
+						params:{src:src,filepath:filepath,directory:getDirectoryFromPath(filepath),method:method,count:count,min:min,max:max,avg:avg,app:app,load:load,query:query,total:total,hash:hash(src),testname:arguments.testname},
+
+						options:{
+							datasource:arguments.dsn
+						});
+			}
+	}
 
 	public any function getCoverageForDirectory(String path, boolean recurse=false, boolean useCache=true){
 			throw("Not implemented");
@@ -102,7 +147,20 @@ component {
 	}
 
 
-	public function findTermsInFiles(String terms="", String path, boolean recurse=true, boolean onlyCovered=false){
+	public function getTestNames(){
+			var found = queryExecute(sql:"
+				SELECT DISTINCT TESTNAME FROM __filecoverage_activity ORDER BY TESTNAME ASC;
+			");
+			return found;
+	}
+
+	/**
+	
+		testname: testname can be "ALL", empty or a testname, if it is all, the filter is not used, if it is empty, them it searches for null or empty.
+	**/
+	public function findTermsInFiles(String terms="", String path, boolean recurse=true, boolean onlyCovered=false, testname="ALL"){
+
+
 
 		if(!Len(Trim(terms))){
 			throw("No search terms defined. What are you looking for?")
@@ -115,7 +173,7 @@ component {
 		//Which files are we going to get?
 		if(onlyCovered){
 			//TODO //Handle recurse into sub folders. 
-			var files = getDistinctScannedFiles(path); 
+			var files = getDistinctScannedFiles(path, testname); 
 		}
 		else {
 			var files = getFilesFromCache(path);
@@ -128,7 +186,10 @@ component {
 			var findResults = reFindNoCase("(#terms#)",contents,1,true);
 
 			if(findResults.len[1] NEQ 0){
-				var item = {file:file,findResults:findResults,contents:contents};
+				// var fileArray = fileToArray(contents);
+			
+
+				var item = {file:file,results:findResults,contents:contents};
 				res.append(item);
 			}
 		}
@@ -136,25 +197,55 @@ component {
 		return res;
 
 	}
+
+
+	public Array function fileToArray(string){
+		var ret = ListToArray(string, Chr(13) & Chr(10),true);
+		
+		loop from="1" to="#ret.len()#" index="line"{
+			ret[line] = listToArray(ret[line], "", true);
+		}		
+		return ret;
+	}
+
+
+
+
+
 	public any function getReportForDirectory(String path, boolean recurse=false, boolean useCache=true){
 
-		//Always use Cache. 
+		// Just do the current folder.
+
+		var ret_dirs = directoryList(path, false, "query", "", "name", "dir");
+		var ret_files = directoryList(path, false, "query", "*.cf*", "name", "file");
+		
 
 
+		queryAddColumn(ret_dirs, "hits", "numeric");
+		queryAddColumn(ret_files, "hits", "numeric");
 
 
 		//Directories need to be calculated differently, as we get a roll up of all files accesed underneath them rather than an exact match. 
-		timer label="GetFromCache" type="inline"{
-		var ret_files = getFilesFromCache(path);
-		var ret_dirs = getDirectoriesFromCache(path);
-		}
+		// timer label="GetFromCache" type="inline"{
+		// var ret_files = getFilesFromCache(path);
+		// var ret_dirs = getDirectoriesFromCache(path);
+		// }
+
 
 		
-		timer label="GetAllHits" type="inline"{
 			for(dir in ret_dirs){
+
+				if(pathIsIgnored(dir.directory & "/" & dir.name)){
+					queryDeleteRow(ret_dirs,ret_dirs.currentRow);
+				}
 				querySetCell(ret_dirs, "hits", findTotalHits(dir.directory & "/" & dir.name),ret_dirs.currentRow);
 			}
 
+			for(file in ret_files){
+				if(pathIsIgnored(file.directory & "/" & file.name)){
+					queryDeleteRow(ret_files,ret_files.currentRow);
+				}
+				querySetCell(ret_files, "hits", findTotalHits(ret_files.directory & "/" & ret_files.name),ret_files.currentRow);	
 		}
 		
 		return {
@@ -164,40 +255,45 @@ component {
 	}
 
 
-	function getDistinctScannedFiles(String PathToFind){
-		
-		var found = queryExecute(sql:"
-			SELECT DISTINCT filepath, directory 
-			FROM #variables.table_activity# 
-			WHERE filepath LIKE '#PathToFind#%'
-			ORDER BY filepath, directory ASC
-		");
+	boolean function pathIsIgnored(path){
 
+		return arrayContains(getIgnores(), path);
 
+	}
 
+	function getDistinctScannedFiles(String PathToFind, String testname="ALL"){
 		
 		//Filter it if we have ignored paths. Easier than a big messy query.
-		if(getIgnores().len()){
-			var found = queryExecute(
-				sql:"
-					SELECT * FROM found 
-					WHERE DIRECTORY NOT IN (:ignores)
-				",
-				params: {
-					ignores:{
-						value: getIgnoresAsList(),
-						list: true,
-						cfsqltype: "CF_SQL_VARCHAR"
-					}
-				},
-				options: {
-					dbtype: "query"
-				}
-				);
-			writeDump(found);
+		var queryparams = {};
 
-			abort;
+		savecontent variable="searchQuery"{
+			echo("SELECT DISTINCT filepath, directory 
+				FROM #variables.table_activity# 
+				WHERE filepath LIKE '#PathToFind#%' ");
+
+		if(getIgnores().len()){
+				echo("AND filepath NOT REGEXP :ignores ")
+				queryparams.ignores = getIgnoresAsRegEx()
+			}
+
+			if(arguments.testname NEQ "ALL"){
+				queryparams.testname = arguments.testname;
+				if(!Len(Trim(testname))){
+					echo("AND (testname = '' OR testname IS NULL) ");
+				}
+				else {
+					echo("AND testname = :testname ");
+				}
+			}
+
+			echo("ORDER BY filepath, directory ASC");
 		}
+
+		var found = queryExecute(
+				sql:searchQuery,
+				params: queryparams
+			);
+
 
 		return valueArray(found.filepath);
 
@@ -309,18 +405,19 @@ component {
 
 		//If we have ignores:
 
-		if(getIgnores().len()){
-			return queryExecute(sql:"
-				SELECT a.*, IFNULL(SUM(COUNT), 0) AS HITS 
-				FROM __filecoverage_activity a
-				WHERE FILEPATH LIKE :dir
-				GROUP BY FILEPATH
-				ORDER BY SUM(COUNT) DESC
-				", params: {
-					dir:dir
-				});
 
-		}
+		// if(getIgnores().len()){
+		// 	return queryExecute(sql:"
+		// 		SELECT a.*, IFNULL(SUM(COUNT), 0) AS HITS 
+		// 		FROM __filecoverage_activity a
+		// 		WHERE FILEPATH LIKE :dir
+		// 		GROUP BY FILEPATH
+		// 		ORDER BY SUM(COUNT) DESC
+		// 		", params: {
+		// 			dir:dir
+		// 		},options:{maxrows:max});
+
+		// }
 
 
 		return queryExecute(sql:"
@@ -330,6 +427,7 @@ component {
 			GROUP BY FILEPATH
 			ORDER BY SUM(COUNT) DESC
 			", params: [dir]);
+
 
 	}
 

@@ -16,7 +16,7 @@ if(url.action EQ "buildIndex"){
 }
 report = reporter.getReportForDirectory(url.dir);
 
-highHitters = reporter.getTopHitFiles(url.dir);
+highHitters = reporter.getTopHitFiles(url.dir, 100);
 // cover = reporter.getCoverageForDirectory(url.dir,true);
 </cfscript>
 <cfoutput>
@@ -73,8 +73,9 @@ highHitters = reporter.getTopHitFiles(url.dir);
 				</table>
 				
 		</div>
-		<cfdump var="#report.directories#">
-		<div class="col-md-8">
+		<div class="col-md-1">
+		</div>
+		<div class="col-md-7">
 			<table class="table table-striped table-bordered">
 				<thead>
 					<tr>

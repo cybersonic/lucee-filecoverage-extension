@@ -20,7 +20,7 @@
 				, defaultValue	: ""
 				, required		: true
 				, description	: "Select which datasource to log the activity to"
-				, type			: "text100"
+				, type			: "text200"
 				, values		: ""
 				)
 			
