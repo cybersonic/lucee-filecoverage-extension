@@ -11,6 +11,7 @@
     },
     "bugs":"",
     "slug":"lucee-file-coverage",
+    "lucee-extension-releasetype":"web",
     "shortDescription":"This extension provides a debugging template that logs all the calls to script files as a test or QA person navigates your site. ",
     "description":"",
     "instructions":"",
