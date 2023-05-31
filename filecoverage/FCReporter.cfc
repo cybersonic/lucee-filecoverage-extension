@@ -99,9 +99,12 @@ component {
 
 
 
-		var count = raw.reduce(function(hits=0,cols,index,query){
-			return hits + cols.count;
-		});
+		var count = 0;
+		if (raw.recordCount) {
+			count = raw.reduce(function(hits=0,cols,index,query){
+				return hits + cols.count;
+			});			
+		}
 
 		
 		
