@@ -22,6 +22,8 @@ if(url.action EQ "delete"){
 report = reporter.getReportForDirectory(url.dir);
 cover = reporter.getCoverageForDirectory(url.dir,true);
 
+pathSeparator = reporter.getPathSeparator();
+
 
 </cfscript>
 <cfoutput>
@@ -68,7 +70,7 @@ cover = reporter.getCoverageForDirectory(url.dir,true);
 									<td>
 									<span class="glyphicon glyphicon-folder-open"></span></td>
 									<td class="#FoundCSS#">#directory.hits#</td>
-									<td><a href="#CGI.SCRIPT_NAME#?dir=#directory.directory#/#directory.name#">#directory.name#</a></td>
+									<td><a href="#CGI.SCRIPT_NAME#?dir=#directory.directory##pathSeparator##directory.name#">#directory.name#</a></td>
 								<!--- 	<td><a href="info.cfm?dir=#directory.directory#/#directory.name#">Info</a></td> --->
 								</tr>
 					
@@ -79,7 +81,7 @@ cover = reporter.getCoverageForDirectory(url.dir,true);
 									<cfset FoundCSS = item.hits? "bg-success" : "bg-danger">
 									<td><span class="glyphicon glyphicon glyphicon-file"></span></td>
 									<td class="#FoundCSS#">#item.hits#</td>
-									<td><a href="info.cfm?dir=#item.directory#/#item.name#">#item.name#</a></td>
+									<td><a href="info.cfm?dir=#item.directory##pathSeparator##item.name#">#item.name#</a></td>
 									
 								</tr>
 					</cfoutput>	

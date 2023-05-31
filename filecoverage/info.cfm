@@ -9,6 +9,9 @@
 
 reporter = new FCReporter();
 report = reporter.getInfoForFile(url.dir);
+
+pathSeparator = reporter.getPathSeparator();
+
 </cfscript>
 <cfoutput>
 
