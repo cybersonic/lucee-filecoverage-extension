@@ -3,11 +3,13 @@ component {
 	variables.tablename = "lucee_filecoverage_extension";
 	variables.extensionfilter = "*.cf*";
 
+	variables.pathSeparator = getPathSeparator();
+
 	//TODO: Add ignored foldders etc. 
 
 	public any function getCoverageForDirectory(String path, boolean recurse=false){
 		
-		var delimiter = Right(Path,1) EQ "/"? "" : "/";
+		var delimiter = Right(Path,1) EQ variables.pathSeparator? "" : variables.pathSeparator;
 
 
 		
@@ -23,7 +25,7 @@ component {
 
 		loop query="files"{
 			//See if any of these have hits!
-			var hitsForThisScript = getTotalHits(directory & "/" & name);
+			var hitsForThisScript = getTotalHits(directory & variables.pathSeparator & name);
 
 			if(hitsForThisScript){
 				results.accessed++;
@@ -47,7 +49,7 @@ component {
 		for(file in files){
 
 
-			file["hits"] = getTotalHits(file.directory & "/" & file.name);
+			file["hits"] = getTotalHits(file.directory & variables.pathSeparator & file.name);
 			ret_files.append(file);
 		}
 
@@ -57,7 +59,7 @@ component {
 
 		for(dir in directories){
 
-			dir["hits"] = findTotalHits(dir.directory & "/" & dir.name);
+			dir["hits"] = findTotalHits(dir.directory & variables.pathSeparator & dir.name);
 			ret_dirs.append(dir);
 		}
 
@@ -105,7 +107,6 @@ component {
 				return hits + cols.count;
 			});			
 		}
-
 		
 		
 		return {
@@ -125,8 +126,8 @@ component {
 	function getDotPathFromPath(PathToFind){
 		var dotPath = contractPath(PathToFind);
 			dotPath = listDeleteAt(dotPath, ListLen(dotPath, "."),".");
-			dotPath = listTrim(dotPath,"/");
-			dotPath = Replace(dotPath, "/", ".", "all");
+			dotPath = listTrim(dotPath,variables.pathSeparator);
+			dotPath = Replace(dotPath, variables.pathSeparator, ".", "all");
 
 		return dotPath;
 	}
@@ -187,6 +188,11 @@ component {
 
 	function getAll(){
 		return queryExecute(sql:"SELECT * FROM #variables.tablename#");
+	}
+
+	function getPathSeparator(){
+		var File = CreateObject("java", "java.io.File");
+		return File.separator;
 	}
 
 }
